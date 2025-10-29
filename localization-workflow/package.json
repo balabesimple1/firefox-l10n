@@ -1,0 +1,21 @@
+{
+  "name": "localization-workflow-system",
+  "version": "1.0.0",
+  "description": "Comprehensive localization workflow management system for Firefox and other products",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "cd server && npm run dev",
+    "client:dev": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "test": "cd server && npm test && cd ../client && npm test"
+  },
+  "keywords": ["localization", "translation", "workflow", "firefox", "l10n"],
+  "author": "Mozilla L10n Team",
+  "license": "MPL-2.0",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

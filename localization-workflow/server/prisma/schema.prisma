@@ -1,0 +1,303 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  PRODUCT_TEAM
+  FINANCE_TEAM
+  TRANSLATOR
+}
+
+enum ProjectStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum TranslationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REVIEW_REQUIRED
+  APPROVED
+  REJECTED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  PAID
+  REJECTED
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  translatorProfile Translator?
+  createdProjects   Project[]   @relation("ProjectCreator")
+  assignedTasks     TranslationTask[]
+  invoices          Invoice[]
+  costEstimations   CostEstimation[]
+
+  @@map("users")
+}
+
+model Translator {
+  id       String @id @default(cuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Translator specific fields
+  specializations String[]
+  experience      Int // years of experience
+  rating          Float?
+  totalEarnings   Float  @default(0)
+  
+  // Relationships
+  localeRates     TranslatorRate[]
+  assignments     ProjectLocale[]
+  tasks           TranslationTask[]
+  invoices        Invoice[]
+  costEstimations CostEstimation[]
+
+  @@map("translators")
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  repository  String?
+  status      ProjectStatus @default(ACTIVE)
+  autoApprove Boolean       @default(false)
+  costThreshold Float?      // Auto-approve threshold
+  createdById String
+  createdBy   User          @relation("ProjectCreator", fields: [createdById], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relationships
+  locales         ProjectLocale[]
+  translationTasks TranslationTask[]
+  invoices        Invoice[]
+  costEstimations CostEstimation[]
+  reports         Report[]
+
+  @@map("projects")
+}
+
+model Locale {
+  id   String @id @default(cuid())
+  code String @unique // e.g., "en-US", "fr-FR"
+  name String // e.g., "English (US)", "French (France)"
+
+  // Relationships
+  projects        ProjectLocale[]
+  translatorRates TranslatorRate[]
+  translationTasks TranslationTask[]
+  reports         Report[]
+
+  @@map("locales")
+}
+
+model ProjectLocale {
+  id           String @id @default(cuid())
+  projectId    String
+  localeId     String
+  translatorId String?
+  isActive     Boolean @default(true)
+  
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  locale     Locale      @relation(fields: [localeId], references: [id])
+  translator Translator? @relation(fields: [translatorId], references: [id])
+
+  // Translation statistics
+  totalStrings      Int @default(0)
+  translatedStrings Int @default(0)
+  reviewedStrings   Int @default(0)
+  warningCount      Int @default(0)
+  errorCount        Int @default(0)
+
+  @@unique([projectId, localeId])
+  @@map("project_locales")
+}
+
+model TranslatorRate {
+  id           String @id @default(cuid())
+  translatorId String
+  localeId     String
+  ratePerWord  Float
+  currency     String @default("USD")
+  
+  translator Translator @relation(fields: [translatorId], references: [id], onDelete: Cascade)
+  locale     Locale     @relation(fields: [localeId], references: [id])
+
+  @@unique([translatorId, localeId])
+  @@map("translator_rates")
+}
+
+model TranslationTask {
+  id          String            @id @default(cuid())
+  projectId   String
+  localeId    String
+  assigneeId  String?
+  title       String
+  description String?
+  wordCount   Int               @default(0)
+  status      TranslationStatus @default(PENDING)
+  priority    Int               @default(1) // 1 = low, 5 = high
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  project  Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  locale   Locale      @relation(fields: [localeId], references: [id])
+  assignee User?       @relation(fields: [assigneeId], references: [id])
+
+  // Cost tracking
+  estimatedCost Float?
+  actualCost    Float?
+  
+  // AI translation tracking
+  aiTranslated     Boolean @default(false)
+  aiCostSavings    Float?
+  tmCostSavings    Float? // Translation Memory savings
+
+  @@map("translation_tasks")
+}
+
+model CostEstimation {
+  id           String   @id @default(cuid())
+  projectId    String
+  translatorId String
+  wordCount    Int
+  estimatedCost Float
+  estimatedDays Int
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  translator Translator @relation(fields: [translatorId], references: [id])
+  user       User       @relation(fields: [translatorId], references: [id])
+
+  @@map("cost_estimations")
+}
+
+model Invoice {
+  id           String        @id @default(cuid())
+  invoiceNumber String       @unique
+  projectId    String
+  translatorId String
+  userId       String
+  month        Int // 1-12
+  year         Int
+  totalAmount  Float
+  currency     String        @default("USD")
+  status       InvoiceStatus @default(DRAFT)
+  submittedAt  DateTime?
+  approvedAt   DateTime?
+  paidAt       DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  project    Project    @relation(fields: [projectId], references: [id])
+  translator Translator @relation(fields: [translatorId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+
+  // Invoice line items
+  lineItems InvoiceLineItem[]
+
+  @@unique([projectId, translatorId, month, year])
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id          String @id @default(cuid())
+  invoiceId   String
+  description String
+  wordCount   Int
+  ratePerWord Float
+  amount      Float
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_line_items")
+}
+
+model TranslationMemory {
+  id          String   @id @default(cuid())
+  sourceText  String
+  targetText  String
+  sourceLocale String
+  targetLocale String
+  quality     Float    @default(1.0) // 0-1 quality score
+  usage       Int      @default(0)   // How many times used
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([sourceText, targetText, sourceLocale, targetLocale])
+  @@map("translation_memory")
+}
+
+model Glossary {
+  id           String   @id @default(cuid())
+  term         String
+  definition   String
+  context      String?
+  locale       String
+  category     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([term, locale])
+  @@map("glossary")
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   // "monthly", "quarterly", "yearly", "custom"
+  projectId String?
+  localeId  String?
+  data      Json     // Store report data as JSON
+  createdAt DateTime @default(now())
+
+  project Project? @relation(fields: [projectId], references: [id])
+  locale  Locale?  @relation(fields: [localeId], references: [id])
+
+  @@map("reports")
+}
+
+model SystemSettings {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  
+  @@map("system_settings")
+}
