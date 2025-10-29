@@ -1,43 +1,149 @@
-# Firefox Localization: Source
+# Localization Management System
 
-This repository contains the source locale messages for Firefox.
-They are extracted from the active branches (Nightly, Beta, Release, ESRs)
-by a scheduled [GitHub action](./.github/workflows/update.yml),
-which produces pull requests that are reviewed by the L10n team before merging.
+A comprehensive localization workflow management system that supports multiple team roles and provides end-to-end translation project management.
 
-From here, messages are exposed to translators in [Pontoon](https://pontoon.mozilla.org/).
+## Features
 
-Note that unless otherwise specified,
-files in this repository have been processed from their Source Code Form,
-and therefore following our [license](./LICENSE) (MPL-2.0)
-do not necessarily carry a Source Code Form License Notice.
-The Source Code Form for each such file is available from
-[mozilla/mozilla-firefox/firefox](https://github.com/mozilla-firefox/firefox).
+### 🎯 Multi-Role Support
+- **Product Team**: Request translations, track costs, monitor progress
+- **Finance Team**: Manage invoices, track spending, approve payments
+- **Translation Team**: Manage tasks, submit invoices, update translations
+- **Admin Team**: System administration, user management, AI integration
 
-## Adding a New Firefox Version
+### 🚀 Key Capabilities
+- **Cost Estimation & Auto-Approval**: Automated cost calculation with configurable approval thresholds
+- **Translation Memory**: Leverage previous translations for cost savings
+- **AI Integration**: AI-powered translations and conversational assistant
+- **Comprehensive Reporting**: Interactive dashboards and detailed analytics
+- **Invoice Management**: End-to-end invoice processing and payment tracking
+- **Bulk Operations**: Efficient handling of multiple locales and projects
 
-Before adding a new supported Firefox version, make sure to merge pending update pull requests
-(it will avoid the need to rebase existing PRs). Then:
+## Quick Start
 
-1. Create a local branch.
-2. Add the new version to the update configuration in `.github/update-config.json`.
-Note that ESR versions should be ordered by the most recent to the least recent
-(e.g. `esr140` before `esr128`). The name of the version needs to match the
-branch name on [mozilla/mozilla-firefox/firefox](https://github.com/mozilla-firefox/firefox).
-5. Open a pull request.
-6. Once the pull request is merged, run the update automation. This will generate
-the corresponding data storage file in `_data`.
+### Prerequisites
+- Node.js 18+ 
+- MongoDB
+- OpenAI API key (for AI features)
 
-## Removing a Supported Version
+### Installation
 
-Before removing a supported version from the repository, make sure to merge
-pending update pull requests and pause sync in Pontoon. Then:
+1. **Clone and install dependencies:**
+```bash
+npm run install:all
+```
 
-1. Create a local branch.
-2. Remove the corresponding data storage file in `_data` (e.g. `_data/esr128.json`).
-3. Remove the version from the update configuration in `.github/update-config.json`.
-4. In a virtual environment with the [requirements](.github/scripts/requirements.txt)
-installed, run the Python script `.github/scripts/prune.py`. This will remove
-the content and provide a report.
-5. Open a pull request.
-6. Once the pull request is merged, run the update automation.
+2. **Set up environment variables:**
+```bash
+# Server environment (.env in server/)
+MONGODB_URI=mongodb://localhost:27017/localization
+JWT_SECRET=your_jwt_secret_here
+OPENAI_API_KEY=your_openai_api_key_here
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_email_password
+```
+
+3. **Start the development servers:**
+```bash
+npm run dev
+```
+
+The application will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
+
+## Architecture
+
+### Backend (Node.js/Express)
+- RESTful API with MongoDB
+- JWT authentication
+- Role-based authorization
+- OpenAI integration
+- Automated email notifications
+
+### Frontend (React/Material-UI)
+- Modern responsive design
+- Role-based dashboards
+- Interactive charts and reporting
+- Real-time updates
+- AI chat interface
+
+### Database Schema
+- Products, Locales, Translators
+- Translation Tasks & Memory
+- Invoices & Payment tracking
+- User roles & permissions
+
+## Team Workflows
+
+### Product Team Workflow
+1. Request new product localization
+2. Configure locales and translators
+3. Monitor translation progress
+4. Review cost estimates and approve
+5. Track spending via dashboards
+
+### Finance Team Workflow
+1. Review monthly invoices
+2. Track spending by product/translator
+3. Approve payments
+4. Generate financial reports
+
+### Translation Team Workflow
+1. View assigned translation tasks
+2. Download resources for translation
+3. Update translation memory
+4. Submit monthly invoices
+5. Track payment status
+
+### Admin Team Workflow
+1. Manage projects and translators
+2. Configure system settings
+3. Monitor overall operations
+4. Manage AI integrations
+
+## API Documentation
+
+### Authentication
+```
+POST /api/auth/login
+POST /api/auth/register
+GET /api/auth/profile
+```
+
+### Products
+```
+GET /api/products
+POST /api/products
+PUT /api/products/:id
+DELETE /api/products/:id
+```
+
+### Translations
+```
+GET /api/translations
+POST /api/translations
+PUT /api/translations/:id
+GET /api/translations/stats
+```
+
+### Invoices
+```
+GET /api/invoices
+POST /api/invoices
+PUT /api/invoices/:id
+GET /api/invoices/monthly
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details.
