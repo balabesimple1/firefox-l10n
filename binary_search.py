@@ -1,4 +1,16 @@
 def binary_search(arr, target):
+    """Search for target in a sorted array using binary search.
+
+    Repeatedly halves the search space by comparing the target to the
+    midpoint, achieving O(log n) time complexity.
+
+    Args:
+        arr: A sorted list of comparable elements.
+        target: The value to search for.
+
+    Returns:
+        The index of target in arr, or -1 if not found.
+    """
     low, high = 0, len(arr) - 1
 
     while low <= high:
@@ -6,8 +18,10 @@ def binary_search(arr, target):
         if arr[mid] == target:
             return mid
         elif arr[mid] < target:
+            # Target is in the right half
             low = mid + 1
         else:
+            # Target is in the left half
             high = mid - 1
 
     return -1
@@ -17,6 +31,7 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 2:
+        # Last argument is the search target; everything before it is the array
         target = sys.argv[-1]
         data = sys.argv[1:-1]
         try:
